@@ -26,6 +26,7 @@ file(COPY src/shaders/3d_fragment.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/sha
 file(COPY src/shaders/3d_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
 file(COPY src/shaders/grid_fragment.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
 file(COPY src/shaders/grid_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
+file(COPY src/shaders/perlin.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
 
 FetchContent_Declare(imgui_external
 	URL https://github.com/ocornut/imgui/archive/refs/tags/v1.92.0.tar.gz
