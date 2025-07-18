@@ -17,6 +17,8 @@ int main()
     /* Controller */
     Controller controller = Controller(WIDTH, HEIGHT);
 
+    int n = controller.rows;
+
     /* Window */
     Window window = Window(controller);
 
@@ -30,6 +32,35 @@ int main()
     /*Delete shaders once they are in a program*/
     glDeleteShader(vertex_3d_shader);
     glDeleteShader(fragment_3d_shader);
+    
+    unsigned int compute = controller.get_compute_program("shaders/perlin.glsl");
+
+    // texture size
+    const unsigned int TEXTURE_WIDTH = 1000, TEXTURE_HEIGHT = 1000;
+
+    unsigned int texture;
+
+    glGenTextures(1, &texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_RGBA, 
+             GL_FLOAT, NULL);
+
+    glBindImageTexture(0, texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+
+    glUseProgram(compute);
+    glDispatchCompute((unsigned int)TEXTURE_WIDTH, (unsigned int)TEXTURE_HEIGHT, 1);
+
+    // make sure writing to image has finished before read
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+   
+
+
 
     /*Get vertices for the gridlines and positions of all squares*/
     
@@ -91,9 +122,15 @@ int main()
 
     std::vector <int> voxel_grid(controller.rows * controller.cols * controller.planes, 0); 
 
-    int active_voxels = 40;
+    int active_voxels = controller.rows * controller.cols;
 
-    controller.addnRandomVoxels(voxel_grid, active_voxels);
+    //controller.addnRandomVoxels(voxel_grid, active_voxels);
+
+    for(int i = 0 ; i < controller.rows; i++){
+        for(int j = 0; j < controller.planes; j++){
+            voxel_grid[worldIdx(i, controller.rows-1, j, controller.rows, controller.rows, controller.rows)] = 1;
+        }
+    }
 
     /*Get vertices for the gridlines and positions of all squares*/
     std::vector<float> points_3d = controller.grid_points_3d();
@@ -131,25 +168,32 @@ int main()
 
         /* get uniform locations */
         unsigned int color_loc = glGetUniformLocation(shader_program_3d, "uniColor");
+        unsigned int intensityLoc = glGetUniformLocation(shader_program_3d, "light_intensity");
         unsigned int viewLoc  = glGetUniformLocation(shader_program_3d, "view");
         unsigned int projLoc  = glGetUniformLocation(shader_program_3d, "projection");
+        unsigned int texLoc   = glGetUniformLocation(shader_program_3d, "text");
 
 
         glUseProgram(shader_program_3d);
+        glUniform1i(texLoc, 0);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
 
         /* updates uniforms */
         glUniform3fv(color_loc, 1, controller.cell_color);
+        glUniform1f(intensityLoc, 1.0);
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(controller.camera.get_camera_view()));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection_3d));
         
         glBindVertexArray(VAOs[0]);
         
         /*Draws cell instances*/
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 30, 100); 
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 30, active_voxels); 
         
         /*draws Imgui interface*/
-        controller.renderImgui(window.m_glfwWindow, (*window.io));
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        // controller.renderImgui(window.m_glfwWindow, (*window.io));
+        // ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glBindVertexArray(0);
         glfwSwapBuffers(window.m_glfwWindow);

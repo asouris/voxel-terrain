@@ -18,6 +18,10 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
+
+int worldIdx(int i, int j, int k, const int N, const int M, const int D);
+
+
 /** Represents a Camera, manges view matrix logic */
 struct Camera {
 
@@ -68,6 +72,9 @@ struct Controller{
      * @return shader identifier
     */
     unsigned int load_shader(std::string path, bool shader_type);
+
+    unsigned int get_compute_program(std::string path);
+
     /** Creates shader program from shaders, if said so, it deletes the used shaders afterwards.
      * @param vertex vertex shader already loaded
      * @param fragment fragment shader already loaded

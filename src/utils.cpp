@@ -59,6 +59,48 @@ unsigned int Controller::load_shader(std::string path, bool shader_type){
     return shader;
 }
 
+unsigned int Controller::get_compute_program(std::string path){
+    /*reading shader*/
+    std::ifstream shaderInput;
+    shaderInput.open(path);
+    std::stringstream strStream;
+    strStream << shaderInput.rdbuf() << "\n\0"; //read the file
+    const std::string& tmp = strStream.str();   
+    const char *shader_source = tmp.c_str();
+
+    shaderInput.close();
+
+    /*loading shader into opengl*/
+    int success;
+    char infoLog[512];
+
+    unsigned int shader = glCreateShader(GL_COMPUTE_SHADER);
+   
+
+    glShaderSource(shader, 1, &shader_source, NULL);
+    glCompileShader(shader);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    
+    // shader Program
+    unsigned int ID = glCreateProgram();
+    glAttachShader(ID, shader);
+    glLinkProgram(ID);
+    // check for linking errors
+    glGetProgramiv(ID, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(ID, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+
+    return ID;
+
+}
+
 unsigned int Controller::create_shader_program(unsigned int vertex, unsigned int fragment){
     int success;
     char infoLog[512];
@@ -128,31 +170,31 @@ std::vector<float> Controller::grid_points_3d(){
     return vertices;
 }
 
-void Controller::renderImgui(GLFWwindow* window, ImGuiIO &io){
+// void Controller::renderImgui(GLFWwindow* window, ImGuiIO &io){
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+//     ImGui_ImplOpenGL3_NewFrame();
+//     ImGui_ImplGlfw_NewFrame();
+//     ImGui::NewFrame();
     
-    /*Contents of the window*/
-    {
-        ImGui::Begin("Controller");    
-        ImGui::SetWindowPos(ImVec2(WIDTH*0.6, 20));                     
+//     /*Contents of the window*/
+//     {
+//         ImGui::Begin("Controller");    
+//         ImGui::SetWindowPos(ImVec2(WIDTH*0.6, 20));                     
 
-        ImGui::SliderInt("Velocity", &current_fps, 0, 60);  
+//         ImGui::SliderInt("Velocity", &current_fps, 0, 60);  
         
-        ImGui::ColorEdit4("Color", cell_color);    
+//         ImGui::ColorEdit4("Color", cell_color);    
 
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::End();
-    }
+//         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+//         ImGui::End();
+//     }
 
 
-    /*Actual rendering*/
-    ImGui::Render();
-    int display_w, display_h;
-    glfwGetFramebufferSize(window, &display_w, &display_h);
-}
+//     /*Actual rendering*/
+//     ImGui::Render();
+//     int display_w, display_h;
+//     glfwGetFramebufferSize(window, &display_w, &display_h);
+// }
 
 
 /* VOXELS */
@@ -212,22 +254,23 @@ Window::Window(Controller &c){
     glfwSetScrollCallback(m_glfwWindow, WindowScrollCallback);
 
     /*ImGui setup*/
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    io = &ImGui::GetIO();
-    (void)io;
-    (*io).ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    (*io).ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    // IMGUI_CHECKVERSION();
+    // ImGui::CreateContext();
+    // io = &ImGui::GetIO();
+    // (void)io;
+    // (*io).ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    // (*io).ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
-    ImGui::StyleColorsDark();
+    // ImGui::StyleColorsDark();
 
-    // Setup scaling
-    ImGuiStyle& style = ImGui::GetStyle();
+    // // Setup scaling
+    // ImGuiStyle& style = ImGui::GetStyle();
     
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(m_glfwWindow, true);
-    ImGui_ImplOpenGL3_Init("#version 130");
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    // // Setup Platform/Renderer backends
+    // ImGui_ImplGlfw_InitForOpenGL(m_glfwWindow, true);
+    
+    // ImGui_ImplOpenGL3_Init("#version 430");
+    // ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     
 
     /*OpenGL config*/
@@ -237,7 +280,8 @@ Window::Window(Controller &c){
 
 void Window::init_glfw_window(int width, int height, const char *title){
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
@@ -249,9 +293,12 @@ void Window::init_glfw_window(int width, int height, const char *title){
         exit(0);
     }
 
-    glfwMakeContextCurrent(m_glfwWindow);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+
+    glfwMakeContextCurrent(m_glfwWindow);
+    //gladLoadGL(glfwGetProcAddress);
+
+    if (!gladLoadGL(glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         exit(0);

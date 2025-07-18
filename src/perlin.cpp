@@ -57,9 +57,9 @@ int main(){
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
-        std::cerr<<"Failed to initialize GLAD\n"; return -1;
-    }
+    // if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
+    //     std::cerr<<"Failed to initialize GLAD\n"; return -1;
+    // }
 
     auto compile = [&](GLenum type, const char* src){
         GLuint s = glCreateShader(type);
