@@ -77,6 +77,11 @@ add_executable(perlin src/perlin.cpp)
 target_include_directories(perlin PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(perlin ${OPENGL_LIBRARIES} utils)
 
+
+add_executable(perlin-chunks src/perlin-chunks.cpp)
+target_include_directories(perlin-chunks PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(perlin-chunks ${OPENGL_LIBRARIES} utils)
+
 # This one generates an render of the compute shader perlin.glsl for debugging
 add_executable(testCompute src/testCompute.cpp)
 target_include_directories(testCompute PUBLIC ${PROJECT_SOURCE_DIR}/include)
