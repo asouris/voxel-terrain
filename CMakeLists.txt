@@ -72,3 +72,8 @@ target_link_libraries(voxels ${OPENGL_LIBRARIES} utils)
 add_executable(perlin src/perlin.cpp)
 target_include_directories(perlin PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(perlin ${OPENGL_LIBRARIES} utils)
+
+
+add_executable(perlin-chunks src/perlin-chunks.cpp)
+target_include_directories(perlin-chunks PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(perlin-chunks ${OPENGL_LIBRARIES} utils)
