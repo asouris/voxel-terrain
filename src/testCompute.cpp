@@ -205,8 +205,8 @@ int main()
 	glVertexArrayVertexBuffer(VAO, 0, VBO, 0, 5 * sizeof(GLfloat));
 	glVertexArrayElementBuffer(VAO, EBO);
 
-	int simulationWIDTH = 80;
-	int simulationHEIGHT = 80;
+	int simulationWIDTH = 400;
+	int simulationHEIGHT = 400;
 
 	GLuint screenTex;
 	glCreateTextures(GL_TEXTURE_2D, 1, &screenTex);
