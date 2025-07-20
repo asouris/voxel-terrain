@@ -162,7 +162,7 @@ std::vector<float> Controller::grid_points_3d(){
     for(int k = planes-1; k >= 0; k--){
         for(int i = 0 ; i < rows; i++){
             for(int j = cols-1; j >= 0; j--){
-                vertices.insert(vertices.end(), {cell_gl_size*(float)i - 0.8f, cell_gl_size*(float)j - 0.8f, cell_gl_size*(float)k - 0.8f});
+                vertices.insert(vertices.end(), {cell_gl_size*(float)i-SIM_SCALE, cell_gl_size*(float)j, cell_gl_size*(float)k-SIM_SCALE});
             }
         }
     }
@@ -280,9 +280,9 @@ Window::Window(Controller &c){
 
 void Window::init_glfw_window(int width, int height, const char *title){
     glfwInit();
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
     m_glfwWindow = glfwCreateWindow(width, height, title, NULL, NULL);
@@ -332,4 +332,53 @@ void Window::internal_key_callback(int key, int action){
 void Window::internal_scroll_callback(double xoffset, double yoffset){
 
     controller->camera.distance += yoffset;
+}
+
+std::vector<float> getCubeVertices (float cell_size){
+
+    std::vector<float> cube_vertices = {                                                   //normales
+        0.0, 0.0, 0.0,                                                              0.0f, -1.0f, 0.0f, // 0
+        cell_size, 0.0, 0,                                          0.0f, -1.0f, 0.0f, // 1
+        cell_size, 0.0, 0.0,                                          0.0f, -1.0f, 0.0f, // 4
+        0, 0.0, 0,                                          0.0f, -1.0f, 0.0f, // 4
+        cell_size, 0.0, cell_size,                                                              0.0f, -1.0f, 0.0f, // 0
+        0, 0.0, cell_size,                      0.0f, -1.0f, 0.0f, // 5
+
+        0.0, cell_size, 0,                      0.0f, 1.0f, 0.0f,  // 3
+        0.0, cell_size, cell_size,                                          0.0f, 1.0f, 0.0f,  // 2
+        cell_size, cell_size, cell_size,                      0.0f, 1.0f, 0.0f,  // 6
+        0.0, cell_size, 0,                      0.0f, 1.0f, 0.0f,  // 3
+        cell_size, cell_size, cell_size,                      0.0f, 1.0f, 0.0f,  // 6
+        cell_size, cell_size, 0,  0.0f, 1.0f, 0.0f,  // 7
+
+        0.0, 0, 0.0,                                          0.0, 0.0, -1.0, // 2
+        0.0, cell_size, 0.0,                                                              0.0, 0.0, -1.0, // 0
+        cell_size, cell_size, 0.0,                                          0.0, 0.0, -1.0, // 4
+        0.0, 0, 0.0,                                          0.0, 0.0, -1.0, // 2
+        cell_size, cell_size, 0.0,                                          0.0, 0.0, -1.0, // 4
+        cell_size, 0, 0.0,                      0.0, 0.0, -1.0, // 6
+
+        cell_size, 0, cell_size,                      1.0, 0.0, 0.0,  // 6
+        cell_size, 0.0, 0.0,                                          1.0, 0.0, 0.0,  // 4
+        cell_size, cell_size, 0,                      1.0, 0.0, 0.0,  // 5
+        cell_size, 0, cell_size,                      1.0, 0.0, 0.0,  // 6
+        cell_size, cell_size, 0,                      1.0, 0.0, 0.0,  // 5
+        cell_size, cell_size, cell_size,  1.0, 0.0, 0.0,  // 7
+
+        0, 0, cell_size,  0.0, 0.0, 1.0,  // 7
+        cell_size, 0.0, cell_size,                      0.0, 0.0, 1.0,  // 5
+        cell_size, cell_size, cell_size,                                          0.0, 0.0, 1.0,  // 1
+        0, 0, cell_size,  0.0, 0.0, 1.0,  // 7
+        cell_size, cell_size, cell_size,                                          0.0, 0.0, 1.0,  // 1
+        0.0, cell_size, cell_size,                      0.0, 0.0, 1.0,  // 3
+
+        0.0, 0, 0,                      -1.0, 0.0, 0.0, // 3
+        0.0, 0.0, cell_size,                                          -1.0, 0.0, 0.0, // 1
+        0.0, cell_size, cell_size,                                                              -1.0, 0.0, 0.0, // 0
+        0.0, 0, 0,                                          -1.0, 0.0, 0.0, // 1
+        0.0, cell_size, cell_size,                                                              -1.0, 0.0, 0.0, // 0
+        0.0, cell_size, 0.0,                                          -1.0, 0.0, 0.0  // 2
+    };
+
+    return cube_vertices;
 }

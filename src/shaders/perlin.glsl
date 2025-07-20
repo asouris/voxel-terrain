@@ -66,20 +66,12 @@ float scale = 1.75;
 float heightOffset = 0.;
 
 void main() {
-    //float h       = fractalPerlin();
 
+    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
 
-    vec4 value = vec4(0.0, 0.0, 0.0, 1.0);
-    ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
-	
-    // value.x = float(texelCoord.x)/(gl_NumWorkGroups.x);
-    // value.y = float(texelCoord.y)/(gl_NumWorkGroups.y);
-	
-    value.x = float(texelCoord.x) / (gl_NumWorkGroups.x * gl_WorkGroupSize.x);
-    value.y = float(texelCoord.y) / (gl_NumWorkGroups.y * gl_WorkGroupSize.y);
-    imageStore(imgOutput, texelCoord, vec4(gl_GlobalInvocationID.xy, -5, 0));
+    float h       = fractalPerlin(pixel_coords*0.1);
+    h = max(0, h);
+
+    imageStore(imgOutput, pixel_coords, vec4(h * scale + heightOffset));
     
-	
-    //imageStore(imgOutput, texelCoord, vec4(0, h * scale + heightOffset, 0, 1.0));
-
 }

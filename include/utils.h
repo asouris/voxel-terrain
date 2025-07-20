@@ -20,15 +20,16 @@
 
 
 int worldIdx(int i, int j, int k, const int N, const int M, const int D);
+std::vector<float> getCubeVertices (float cell_size);
 
 
 /** Represents a Camera, manges view matrix logic */
 struct Camera {
 
-    glm::vec3 position = glm::vec3(3.0f, 0.0f, 0.0f);   /* position of camera*/
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);   /* position of camera*/
     glm::vec3 focus =    glm::vec3(0.0f, 0.0f, 0.0f);   /* target of camera*/
     double distance = 3;                                /* distance from target*/
-    double theta = 90;                                  /* vertical angle*/
+    double theta = 45;                                  /* vertical angle*/
     double phi = 0;                                     /* horizontal angle*/
 
     int keys[4] = {0, 0, 0, 0};                         /* hold active keys*/
@@ -47,7 +48,7 @@ struct Controller{
     /* simulation constants */
     int WIDTH, HEIGHT;
     int rows, cols, planes;
-    float SIM_SCALE = 0.8;          /* Scale of the simulation in comparison to window size*/
+    float SIM_SCALE = 1;          /* Scale of the simulation in comparison to window size*/
     float CELL_SIZE = 10.0;         /* Size of cell of pixels */
     float cell_gl_size;             /* Size of cell for OpenGL*/
 

@@ -29,87 +29,15 @@ int main()
     /*Define shader program*/
     unsigned int shader_program_3d = controller.create_shader_program(vertex_3d_shader, fragment_3d_shader);
 
+    /*Define compute program*/
+    unsigned int compute = controller.get_compute_program("shaders/perlin.glsl");
+
     /*Delete shaders once they are in a program*/
     glDeleteShader(vertex_3d_shader);
     glDeleteShader(fragment_3d_shader);
     
-    unsigned int compute = controller.get_compute_program("shaders/perlin.glsl");
-
-    // texture size
-    const unsigned int TEXTURE_WIDTH = 1000, TEXTURE_HEIGHT = 1000;
-
-    unsigned int texture;
-
-    glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_RGBA, 
-             GL_FLOAT, NULL);
-
-    glBindImageTexture(0, texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
-    glUseProgram(compute);
-    glDispatchCompute((unsigned int)TEXTURE_WIDTH, (unsigned int)TEXTURE_HEIGHT, 1);
-
-    // make sure writing to image has finished before read
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-   
-
-
-
-    /*Get vertices for the gridlines and positions of all squares*/
-    
     /*Primitive for a white cube*/
-    float new_cube_vertices[] = {                                                   //normales
-        0.0, 0.0, 0.0,                                                              0.0f, -1.0f, 0.0f, // 0
-        0.0, 0.0, controller.cell_gl_size,                                          0.0f, -1.0f, 0.0f, // 1
-        controller.cell_gl_size, 0.0, 0.0,                                          0.0f, -1.0f, 0.0f, // 4
-        controller.cell_gl_size, 0.0, 0.0,                                          0.0f, -1.0f, 0.0f, // 4
-        0.0, 0.0, 0.0,                                                              0.0f, -1.0f, 0.0f, // 0
-        controller.cell_gl_size, 0.0, controller.cell_gl_size,                      0.0f, -1.0f, 0.0f, // 5
-
-        0.0, controller.cell_gl_size, controller.cell_gl_size,                      0.0f, 1.0f, 0.0f,  // 3
-        0.0, controller.cell_gl_size, 0.0,                                          0.0f, 1.0f, 0.0f,  // 2
-        controller.cell_gl_size, controller.cell_gl_size, 0.0,                      0.0f, 1.0f, 0.0f,  // 6
-        0.0, controller.cell_gl_size, controller.cell_gl_size,                      0.0f, 1.0f, 0.0f,  // 3
-        controller.cell_gl_size, controller.cell_gl_size, 0.0,                      0.0f, 1.0f, 0.0f,  // 6
-        controller.cell_gl_size, controller.cell_gl_size, controller.cell_gl_size,  0.0f, 1.0f, 0.0f,  // 7
-
-        0.0, controller.cell_gl_size, 0.0,                                          0.0, 0.0, -1.0, // 2
-        0.0, 0.0, 0.0,                                                              0.0, 0.0, -1.0, // 0
-        controller.cell_gl_size, 0.0, 0.0,                                          0.0, 0.0, -1.0, // 4
-        0.0, controller.cell_gl_size, 0.0,                                          0.0, 0.0, -1.0, // 2
-        controller.cell_gl_size, 0.0, 0.0,                                          0.0, 0.0, -1.0, // 4
-        controller.cell_gl_size, controller.cell_gl_size, 0.0,                      0.0, 0.0, -1.0, // 6
-
-        controller.cell_gl_size, controller.cell_gl_size, 0.0,                      1.0, 0.0, 0.0,  // 6
-        controller.cell_gl_size, 0.0, 0.0,                                          1.0, 0.0, 0.0,  // 4
-        controller.cell_gl_size, 0.0, controller.cell_gl_size,                      1.0, 0.0, 0.0,  // 5
-        controller.cell_gl_size, controller.cell_gl_size, 0.0,                      1.0, 0.0, 0.0,  // 6
-        controller.cell_gl_size, 0.0, controller.cell_gl_size,                      1.0, 0.0, 0.0,  // 5
-        controller.cell_gl_size, controller.cell_gl_size, controller.cell_gl_size,  1.0, 0.0, 0.0,  // 7
-
-        controller.cell_gl_size, controller.cell_gl_size, controller.cell_gl_size,  0.0, 0.0, 1.0,  // 7
-        controller.cell_gl_size, 0.0, controller.cell_gl_size,                      0.0, 0.0, 1.0,  // 5
-        0.0, 0.0, controller.cell_gl_size,                                          0.0, 0.0, 1.0,  // 1
-        controller.cell_gl_size, controller.cell_gl_size, controller.cell_gl_size,  0.0, 0.0, 1.0,  // 7
-        0.0, 0.0, controller.cell_gl_size,                                          0.0, 0.0, 1.0,  // 1
-        0.0, controller.cell_gl_size, controller.cell_gl_size,                      0.0, 0.0, 1.0,  // 3
-
-        0.0, controller.cell_gl_size, controller.cell_gl_size,                      -1.0, 0.0, 0.0, // 3
-        0.0, 0.0, controller.cell_gl_size,                                          -1.0, 0.0, 0.0, // 1
-        0.0, 0.0, 0.0,                                                              -1.0, 0.0, 0.0, // 0
-        0.0, 0.0, controller.cell_gl_size,                                          -1.0, 0.0, 0.0, // 1
-        0.0, 0.0, 0.0,                                                              -1.0, 0.0, 0.0, // 0
-        0.0, controller.cell_gl_size, 0.0,                                          -1.0, 0.0, 0.0  // 2
-    };
-
-    
+    std::vector<float> cube_vertices = getCubeVertices(controller.cell_gl_size);
 
     /*Vertex Buffer Object and Vertex Array Object creation*/
     unsigned int VBOs[3], VAOs[3], EBO;
@@ -118,26 +46,70 @@ int main()
     glGenBuffers(1, &EBO);
 
     /*binding second array: just a quad*/
-    controller.bind_load_normals_buffer(VBOs, VAOs, sizeof(new_cube_vertices), new_cube_vertices, 0);
+    controller.bind_load_normals_buffer(VBOs, VAOs, sizeof(float)*cube_vertices.size(), cube_vertices.data(), 0);
+    
 
+    /*Texture to save result from compute shader*/
+    const unsigned int TEXTURE_WIDTH = controller.rows, TEXTURE_HEIGHT = controller.cols;
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_RGBA, 
+             GL_FLOAT, NULL);
+
+    glBindImageTexture(0, texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    
+    /*Run compute shader*/
+    glUseProgram(compute);
+    /*Here you set the amount of workgroups, one per pixel / grid row*/
+    glDispatchCompute(TEXTURE_WIDTH, TEXTURE_HEIGHT, 1);
+    /*Wait for all threads to finish*/
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+    /*Read result from texture into data array*/
+    glBindTexture(GL_TEXTURE_2D, texture);
+    float* data = new float[TEXTURE_WIDTH * TEXTURE_HEIGHT * 4];
+    glGetTextureImage(texture, 0, GL_RGBA, GL_FLOAT, TEXTURE_WIDTH * TEXTURE_HEIGHT * 4 * 4, data);
+
+    /*Get positions of all cubes of grid*/
+    std::vector<float> points_3d = controller.grid_points_3d();
+
+    /*We make the voxel grid*/
     std::vector <int> voxel_grid(controller.rows * controller.cols * controller.planes, 0); 
 
+    /*Set initial voxels*/
     int active_voxels = controller.rows * controller.cols;
-
-    //controller.addnRandomVoxels(voxel_grid, active_voxels);
-
     for(int i = 0 ; i < controller.rows; i++){
         for(int j = 0; j < controller.planes; j++){
             voxel_grid[worldIdx(i, controller.rows-1, j, controller.rows, controller.rows, controller.rows)] = 1;
         }
     }
 
-    /*Get vertices for the gridlines and positions of all squares*/
-    std::vector<float> points_3d = controller.grid_points_3d();
+    /*Set extra voxels according to height value from noise*/
+    for(int i = 0 ; i < controller.rows; i++){
+        for(int j = 0; j < controller.cols; j++){
+            for(int k = 0; k < controller.planes; k++){
+                int voxelID = worldIdx(i, j, k, controller.rows, controller.rows, controller.rows);
+                float columnHeight = data[worldIdx(i, k, 0, controller.rows, controller.rows, 1)*4];
+                
+                float vx = points_3d[voxelID*3], vy = points_3d[voxelID*3+1], vz = points_3d[voxelID*3+2];
+                if(vy <= columnHeight){
+                    voxel_grid[voxelID] = 1;
+                    active_voxels += 1;
+                }
+            }
+        }
+    }
 
+    /*Get active voxels positions*/
     std::vector<float> active_voxels_positions = controller.getActiveVoxels(voxel_grid, points_3d, active_voxels);
-
-    /*Binding a special array for instancing the quad, it will hold positions*/
+    
+    /*Binding a special array for instancing the cube, it will hold active voxel positions*/
+    /*You can find it as aOffset in the shader*/
     unsigned int instanceVBO;
     glGenBuffers(1, &instanceVBO);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -149,6 +121,7 @@ int main()
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);	
     glVertexAttribDivisor(2, 1);  
+
 
     /*initial view matrices*/
     glm::mat4 projection_3d    = glm::mat4(1.0f);
@@ -171,14 +144,14 @@ int main()
         unsigned int intensityLoc = glGetUniformLocation(shader_program_3d, "light_intensity");
         unsigned int viewLoc  = glGetUniformLocation(shader_program_3d, "view");
         unsigned int projLoc  = glGetUniformLocation(shader_program_3d, "projection");
-        unsigned int texLoc   = glGetUniformLocation(shader_program_3d, "text");
 
 
         glUseProgram(shader_program_3d);
-        glUniform1i(texLoc, 0);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        /*To read texture*/
+        glBindTextureUnit(0, texture);
+        glUniform1i(glGetUniformLocation(shader_program_3d, "screen"), 0);
+
 
         /* updates uniforms */
         glUniform3fv(color_loc, 1, controller.cell_color);
@@ -189,7 +162,7 @@ int main()
         glBindVertexArray(VAOs[0]);
         
         /*Draws cell instances*/
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 30, active_voxels); 
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, active_voxels); 
         
         /*draws Imgui interface*/
         // controller.renderImgui(window.m_glfwWindow, (*window.io));
@@ -229,10 +202,7 @@ int main()
     
     }
 
-    /*if the window was closed, frees memory*/
-    glDeleteVertexArrays(4, VAOs);
-    glDeleteBuffers(4, VBOs);
-
+   
     glfwTerminate();
     return 0;   
   
