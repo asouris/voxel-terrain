@@ -6,12 +6,14 @@ layout(std430, binding = 0) buffer Offsets {
 };
 layout(binding=2, offset=0) uniform atomic_uint counter;
 
-uniform int globalX, globalY;
+uniform int globalX, globalZ;
 uniform float voxelSize;
 uniform int chunkSize;
+uniform int renderDistance;
+uniform vec2 cameraPos;
 
-int seed = 17;
-int octaves = 1;
+int seed = 23;
+int octaves = 2;
 float persistence = 0.7;
 float lacunarity = 2.0;
 
@@ -67,27 +69,35 @@ float fractalPerlin(vec2 P) {
     return sum / norm;
 }
 
-float scale = 1.1;
-float heightOffset = chunkSize * voxelSize / 4;
+float scale = 1.7;
+float heightOffset = chunkSize * voxelSize / 2;
 
 void main() {
     int x           = int(gl_GlobalInvocationID.x);
     int y           = int(gl_GlobalInvocationID.y);
     int z           = int(gl_GlobalInvocationID.z);
 
+
+    vec2 chunkPos   = vec2(
+                        (globalX * chunkSize + (chunkSize / 2)) * voxelSize,
+                        (globalZ * chunkSize + (chunkSize / 2)) * voxelSize
+                    );
+    if (distance(cameraPos, chunkPos) > chunkSize * voxelSize * renderDistance) return;
+
     vec2 worldPos   = vec2(
                         (globalX * chunkSize + x)  * voxelSize,
-                        (globalY * chunkSize + y)  * voxelSize
+                        (globalZ * chunkSize + z)  * voxelSize
                     );
 
-    float h         = fractalPerlin(worldPos) * scale + heightOffset;
-    if (float(z) * voxelSize > h) return;
+    worldPos       += vec2(1000000, 1000000);
 
-    ///uint idx        = x + y * chunkSize + z * chunkSize * chunkSize;
+    float h         = fractalPerlin(worldPos * 0.1) * scale + heightOffset;
+    if (float(y) * voxelSize > h) return;
+    
     uint idx        = atomicCounterIncrement(counter);
 
     idx             = idx * 3;
     data[idx]       = (globalX * chunkSize  + x) * voxelSize;
-    data[idx + 1]   = (globalY * chunkSize  + y) * voxelSize;
-    data[idx + 2]   = float(z) * voxelSize;
+    data[idx + 1]   = float(y) * voxelSize;
+    data[idx + 2]   = (globalZ * chunkSize  + z) * voxelSize;
 }

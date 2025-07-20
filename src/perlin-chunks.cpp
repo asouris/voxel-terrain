@@ -24,9 +24,9 @@ GLuint computeProgram;
 class Chunk{
     public:
 
-    Chunk(long gx, long gy): 
-        globalX(gx),
-        globalY(gy)
+    Chunk(long gx, long gz): 
+        initialGlobalX(gx),
+        initialGlobalZ(gz)
     {
         float voxelSize = VOXEL_SIZE;
 
@@ -115,9 +115,12 @@ class Chunk{
     }
 
     void draw(){
+        globalX = initialGlobalX + cameraChunk[0];
+        globalZ = initialGlobalZ + cameraChunk[1];
+
         glUseProgram(computeProgram);
         glUniform1i(glGetUniformLocation(computeProgram, "globalX"), globalX);
-        glUniform1i(glGetUniformLocation(computeProgram, "globalY"), globalY);
+        glUniform1i(glGetUniformLocation(computeProgram, "globalZ"), globalZ);
         
         glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, counterBuf);
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuf);
@@ -126,7 +129,11 @@ class Chunk{
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, offsetSSBO);
         glDispatchCompute(CHUNK_SIZE/8, CHUNK_SIZE/8, CHUNK_SIZE/8);
 
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        glMemoryBarrier(
+            GL_ATOMIC_COUNTER_BARRIER_BIT    |
+            GL_SHADER_STORAGE_BARRIER_BIT    |
+            GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT
+        );
 
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuf);
         GLuint *cnt = (GLuint*)glMapBufferRange(
@@ -134,40 +141,28 @@ class Chunk{
                         GL_MAP_READ_BIT);
         GLuint instanceCount = *cnt;
         glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+
+        if (*cnt == 0) return;
+
         glUseProgram(program);
         glBindVertexArray(cubeVAO);
         glBindBuffer(GL_ARRAY_BUFFER, offsetSSBO);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 36, *cnt);
 
-        // {
-        //     // bind the SSBO
-        //     glBindBuffer(GL_SHADER_STORAGE_BUFFER, offsetSSBO);
+    }
 
-        //     // map it for reading
-        //     float* ptr = (float*)glMapBufferRange(
-        //         GL_SHADER_STORAGE_BUFFER,
-        //         0,
-        //         chunkBlocks * sizeof(float) * 3,
-        //         GL_MAP_READ_BIT
-        //     );
-
-        //     if (ptr) {
-        //         for (size_t i = 0; i < chunkBlocks; ++i) {
-        //             float x = ptr[i*3 + 0], y = ptr[i*3 + 1], z = ptr[i*3 + 2];
-        //             std::cout << "SSBO["<<i<<"] = ("<<x<<","<<y<<","<<z<<")\n";
-        //         }
-        //     }
-        // }
-
+    void update(long cameraX, long cameraZ){
+        cameraChunk[0] = cameraX;
+        cameraChunk[1] = cameraZ;
     }
 
     private:
 
     float chunkSize;
     GLuint cubeVAO, cubeVBO, offsetSSBO, counterBuf, zero = 0; 
-    long globalX, globalY;
-    std::vector<float> rawOffsets;
+    long initialGlobalX, initialGlobalZ, globalX, globalZ;
     uint chunkBlocks = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+    long cameraChunk[2] = {0, 0};
 
 };
 
@@ -213,19 +208,11 @@ int main(int argc, char* argv[]){
         1000.0f
     );
 
-    glm::mat4 view = glm::lookAt(
-        glm::vec3(7.0f, 7.0f, 5.0f), // eye
-        glm::vec3(0.0f, 0.0f, 0.0f), // target
-        glm::vec3(0.0f, 0.0f, 1.0f)  // up
-    );
-
     glUseProgram(program);
     GLint projLoc = glGetUniformLocation(program, "projection");
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projection[0][0]);
-    GLint viewLoc = glGetUniformLocation(program, "view");
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
 
-    long size = 20;
+    long size = 16;
     long half = size / 2;
 
     std::vector<Chunk> chunks;
@@ -235,6 +222,8 @@ int main(int argc, char* argv[]){
             chunks.emplace_back(Chunk(i - half, j - half));
         }
 
+    controller.camera.render = 2;
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     while(!glfwWindowShouldClose(window.m_glfwWindow)){
@@ -243,7 +232,25 @@ int main(int argc, char* argv[]){
         glClearColor(128/255, 0.0f, 128/255, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        std::for_each(chunks.begin(), chunks.end(), [&](Chunk &c){c.draw();});
+        controller.camera.update();
+        glUseProgram(program);
+        glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, &controller.camera.get_camera_view()[0][0]);
+
+        glUseProgram(computeProgram);
+        glUniform1i(glGetUniformLocation(computeProgram, "renderDistance"), controller.camera.render);
+        float cameraPos[2] = {controller.camera.offset.x, controller.camera.offset.z};
+        glUniform2fv(glGetUniformLocation(computeProgram, "cameraPos"), 1, cameraPos);
+
+        std::for_each(chunks.begin(), chunks.end(), 
+            [&](Chunk &c)
+            {
+                c.update(
+                    floor(controller.camera.offset.x / (CHUNK_SIZE * VOXEL_SIZE)),
+                    floor(controller.camera.offset.z / (CHUNK_SIZE * VOXEL_SIZE))
+                );
+
+                c.draw();
+            });
 
         glfwSwapBuffers(window.m_glfwWindow);
     }
