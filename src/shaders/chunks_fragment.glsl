@@ -1,7 +1,6 @@
-#version 330 core
+#version 430 core
 
 in vec3 fragNormal;
-flat in int colorId;
 
 out vec4 outColor;
 
@@ -14,10 +13,6 @@ vec3 ambientColor      = vec3(0.3, 0.3, 0.3);
 
 void main()
 {
-    if (colorId == 0){
-        discard;
-    }
-
     vec3 ambient = ambientStrength * ambientColor;
 
     vec3 norm = normalize(fragNormal);
