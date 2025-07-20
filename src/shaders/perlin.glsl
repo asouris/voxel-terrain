@@ -62,16 +62,18 @@ float fractalPerlin(vec2 P) {
     return sum / norm;
 }
 
-float scale = 1.75;
+float scale = 1.05;
 float heightOffset = 0.;
 
 void main() {
 
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
 
-    float h       = fractalPerlin(pixel_coords*0.1);
-    h = max(0, h);
+    float h       = fractalPerlin(pixel_coords*0.01);
+    h = max(0.1, h);
 
-    imageStore(imgOutput, pixel_coords, vec4(h * scale + heightOffset));
+    float h2 = fractalPerlin((pixel_coords+vec2(5, 15))*0.09);
+
+    imageStore(imgOutput, pixel_coords, vec4(h * scale + heightOffset + h2*0.1) );
     
 }

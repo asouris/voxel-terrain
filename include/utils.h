@@ -48,8 +48,8 @@ struct Controller{
     /* simulation constants */
     int WIDTH, HEIGHT;
     int rows, cols, planes;
-    float SIM_SCALE = 1;          /* Scale of the simulation in comparison to window size*/
-    float CELL_SIZE = 10.0;         /* Size of cell of pixels */
+    float SIM_SCALE = 2;          /* Scale of the simulation in comparison to window size*/
+    float CELL_SIZE = 5.0;         /* Size of cell of pixels */
     float cell_gl_size;             /* Size of cell for OpenGL*/
 
     /* simulation state variables */

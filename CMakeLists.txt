@@ -24,8 +24,7 @@ include_directories(${OPENGL_INCLUDE_DIRS})
 #copy shaders to bin
 file(COPY src/shaders/3d_fragment.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
 file(COPY src/shaders/3d_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
-file(COPY src/shaders/grid_fragment.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
-file(COPY src/shaders/grid_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
+file(COPY src/shaders/marching_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
 file(COPY src/shaders/perlin.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
 
 FetchContent_Declare(imgui_external
@@ -77,3 +76,7 @@ target_link_libraries(perlin ${OPENGL_LIBRARIES} utils)
 add_executable(testCompute src/testCompute.cpp)
 target_include_directories(testCompute PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(testCompute ${OPENGL_LIBRARIES} utils)
+
+add_executable(marching src/marchingCubes.cpp)
+target_include_directories(marching PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(marching ${OPENGL_LIBRARIES} utils)
