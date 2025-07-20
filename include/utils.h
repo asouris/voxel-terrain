@@ -27,7 +27,7 @@ std::vector<float> getCubeVertices (float cell_size);
 struct Camera {
 
     glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);   /* position of camera*/
-    glm::vec3 focus =    glm::vec3(0.0f, 0.0f, 0.0f);   /* target of camera*/
+    glm::vec3 focus =    glm::vec3(0.0f, 2.0f, 0.0f);   /* target of camera*/
     double distance = 3;                                /* distance from target*/
     double theta = 45;                                  /* vertical angle*/
     double phi = 0;                                     /* horizontal angle*/
@@ -48,8 +48,8 @@ struct Controller{
     /* simulation constants */
     int WIDTH, HEIGHT;
     int rows, cols, planes;
-    float SIM_SCALE = 2;          /* Scale of the simulation in comparison to window size*/
-    float CELL_SIZE = 5.0;         /* Size of cell of pixels */
+    float SIM_SCALE = 3;          /* Scale of the simulation in comparison to window size*/
+    float CELL_SIZE = 10.0;         /* Size of cell of pixels */
     float cell_gl_size;             /* Size of cell for OpenGL*/
 
     /* simulation state variables */

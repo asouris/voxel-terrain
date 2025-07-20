@@ -26,6 +26,11 @@ file(COPY src/shaders/3d_fragment.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/sha
 file(COPY src/shaders/3d_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
 file(COPY src/shaders/marching_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
 file(COPY src/shaders/perlin.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
+file(COPY src/shaders/perlin_3d.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
+file(COPY src/shaders/marching_shadows_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
+file(COPY src/shaders/marching_shadows_fragment.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
+file(COPY src/shaders/depth_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
+file(COPY src/shaders/depth_fragment.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
 
 FetchContent_Declare(imgui_external
 	URL https://github.com/ocornut/imgui/archive/refs/tags/v1.92.0.tar.gz
@@ -80,3 +85,7 @@ target_link_libraries(testCompute ${OPENGL_LIBRARIES} utils)
 add_executable(marching src/marchingCubes.cpp)
 target_include_directories(marching PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(marching ${OPENGL_LIBRARIES} utils)
+
+add_executable(marching3d src/marchingCubes3DNoise.cpp)
+target_include_directories(marching3d PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(marching3d ${OPENGL_LIBRARIES} utils)
