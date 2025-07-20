@@ -128,7 +128,8 @@ int main()
     glm::mat4 view             = glm::mat4(1.0f);
     glm::mat4 projection       = glm::mat4(1.0f);
     projection_3d = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-    
+    glm::vec3 lightPos = glm::vec3(0.0f, 20.0f, 10.0f);
+
     /*Rendering function*/
     auto render = [&](){
 
@@ -141,6 +142,7 @@ int main()
 
         /* get uniform locations */
         unsigned int color_loc = glGetUniformLocation(shader_program_3d, "uniColor");
+        unsigned int lightPosLoc = glGetUniformLocation(shader_program_3d, "lightPos");
         unsigned int intensityLoc = glGetUniformLocation(shader_program_3d, "light_intensity");
         unsigned int viewLoc  = glGetUniformLocation(shader_program_3d, "view");
         unsigned int projLoc  = glGetUniformLocation(shader_program_3d, "projection");
@@ -155,6 +157,7 @@ int main()
 
         /* updates uniforms */
         glUniform3fv(color_loc, 1, controller.cell_color);
+        glUniform3fv(lightPosLoc, 1, glm::value_ptr(lightPos));
         glUniform1f(intensityLoc, 1.0);
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(controller.camera.get_camera_view()));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection_3d));

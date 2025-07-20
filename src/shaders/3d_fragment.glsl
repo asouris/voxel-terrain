@@ -7,22 +7,22 @@ in vec3 fragNormal;                         /*fragment normal*/
 
 uniform vec3 uniColor;                      /*cell color*/
 uniform float light_intensity;              /*directional light intensity*/
-
+uniform vec3 lightPos;
 
 
 vec3 computeDirectionalLight() {
-    vec3 light_direction = vec3(-1, 1, 1);
-    vec3 light_ambient = vec3(0.5, 0.5, 0.5);
+    vec3 light_ambient = vec3(0.3, 0.3, 0.3);
     vec3 light_diffuse = vec3(1, 1, 1);
 
     //ambient
-    vec3 ambient = light_ambient * uniColor;
+    vec3 ambient = light_ambient ;
 
     // diffuse
-    float diff = max(dot(normalize(fragNormal), light_direction), 0.0f);
-    vec3 diffuse = uniColor * light_diffuse * diff;
+    vec3 lightDir = normalize(lightPos - fragPos);
+    float diff = max(dot(lightDir, normalize(fragNormal)), 0.0f);
+    vec3 diffuse =  light_diffuse * diff;
 
-    return ambient+diffuse;
+    return (ambient+diffuse) * uniColor;
 }
 
 void main()
