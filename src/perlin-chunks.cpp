@@ -10,16 +10,21 @@
 #include <vector>
 #include <algorithm>
 
+#include "utils.h"
+
 #define WIDTH  800
 #define HEIGHT 600 
 
-#define CHUNK_SIZE 32
-#define VOXEL_SIZE 0.15
+int   CHUNK_SIZE;
+float VOXEL_SIZE;
+
+GLuint program;
+GLuint computeProgram;
 
 class Chunk{
     public:
 
-    Chunk(size_t gx, size_t gy): 
+    Chunk(long gx, long gy): 
         globalX(gx),
         globalY(gy)
     {
@@ -87,131 +92,129 @@ class Chunk{
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 
-        offsets.reserve(chunkBlocks);
-        for(int x = 0; x < CHUNK_SIZE; x++)
-            for(int y = 0; y < CHUNK_SIZE; y++)
-                for(int z = 0; z < CHUNK_SIZE / 2; z++)
-                offsets.emplace_back(
-                    globalX * (CHUNK_SIZE * voxelSize) + x * voxelSize,
-                    globalY * (CHUNK_SIZE * voxelSize) + y * voxelSize,
-                    int((CHUNK_SIZE * voxelSize) / 4)  - z * voxelSize
-                );
+        glGenBuffers(1, &offsetSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, offsetSSBO);
+        glBufferData(
+            GL_SHADER_STORAGE_BUFFER,
+            chunkBlocks * 3 * sizeof(float),
+            nullptr,
+            GL_DYNAMIC_DRAW
+        );
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, offsetSSBO);
 
-        
-        glGenBuffers(1, &offsetVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, offsetVBO);
-        glBufferData(GL_ARRAY_BUFFER, chunkBlocks * sizeof(glm::vec3), offsets.data(), GL_STATIC_DRAW);
-
-        glBindVertexArray(cubeVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, offsetSSBO);
         glEnableVertexAttribArray(1);
         glVertexAttribDivisor(1, 1);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+        glGenBuffers(1, &counterBuf);
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuf);
+        glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
+        
+        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, counterBuf);
     }
 
     void draw(){
+        glUseProgram(computeProgram);
+        glUniform1i(glGetUniformLocation(computeProgram, "globalX"), globalX);
+        glUniform1i(glGetUniformLocation(computeProgram, "globalY"), globalY);
+        
+        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, counterBuf);
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuf);
+        glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_DYNAMIC_DRAW);
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, offsetSSBO);
+        glDispatchCompute(CHUNK_SIZE/8, CHUNK_SIZE/8, CHUNK_SIZE/8);
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuf);
+        GLuint *cnt = (GLuint*)glMapBufferRange(
+                        GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
+                        GL_MAP_READ_BIT);
+        GLuint instanceCount = *cnt;
+        glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+        glUseProgram(program);
         glBindVertexArray(cubeVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, offsetVBO);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, chunkBlocks);
+        glBindBuffer(GL_ARRAY_BUFFER, offsetSSBO);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, *cnt);
+
+        // {
+        //     // bind the SSBO
+        //     glBindBuffer(GL_SHADER_STORAGE_BUFFER, offsetSSBO);
+
+        //     // map it for reading
+        //     float* ptr = (float*)glMapBufferRange(
+        //         GL_SHADER_STORAGE_BUFFER,
+        //         0,
+        //         chunkBlocks * sizeof(float) * 3,
+        //         GL_MAP_READ_BIT
+        //     );
+
+        //     if (ptr) {
+        //         for (size_t i = 0; i < chunkBlocks; ++i) {
+        //             float x = ptr[i*3 + 0], y = ptr[i*3 + 1], z = ptr[i*3 + 2];
+        //             std::cout << "SSBO["<<i<<"] = ("<<x<<","<<y<<","<<z<<")\n";
+        //         }
+        //     }
+        // }
+
     }
 
     private:
 
     float chunkSize;
-    GLuint cubeVAO, cubeVBO, offsetVBO; 
-    size_t globalX, globalY;
-    std::vector<glm::vec3> offsets;
-    size_t chunkBlocks = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE / 2;
+    GLuint cubeVAO, cubeVBO, offsetSSBO, counterBuf, zero = 0; 
+    long globalX, globalY;
+    std::vector<float> rawOffsets;
+    uint chunkBlocks = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 
 };
 
 
-void framebuffer_size_callback(GLFWwindow* window, int w, int h){
-    glViewport(0, 0, w, h);
-}
-
-GLuint load_shader(const std::string& path, GLenum shaderType) {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        std::cerr << "Error: couldn't load shader in path: " << path << "\n";
-        return 0;
-    }
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string srcStr = buffer.str();
-    const char* src = srcStr.c_str();
-
-    GLuint shader = glCreateShader(shaderType);
-    glShaderSource(shader, 1, &src, nullptr);
-    glCompileShader(shader);
-
-    GLint success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char log[512];
-        glGetShaderInfoLog(shader, 512, nullptr, log);
-        std::cerr << "Error while compiling shader (" << path << "):\n" 
-                  << log << "\n";
-        glDeleteShader(shader);
-        return 0;
+int main(int argc, char* argv[]){
+    if (argc != 3){
+        std::cerr << "Usage: ./" << argv[0] << " <chunk-size> <voxel-size>";
+        exit(1);
     }
 
-    return shader;
-}
+    CHUNK_SIZE = atoi(argv[1]);
+    VOXEL_SIZE = atof(argv[2]);
 
+    /* Controller */
+    Controller controller = Controller(WIDTH, HEIGHT);
 
+    /* Window */
+    Window window = Window(controller);
 
-int main(){
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "test", nullptr, nullptr);
-    if(!window){ std::cerr<<"Error creating window\n"; return -1; }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(window.m_glfwWindow, [](GLFWwindow* window, int w, int h){glViewport(0, 0, w, h);});
 
-    if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
-        std::cerr<<"Failed to initialize GLAD\n"; return -1;
-    }
+    /*Load and create shader variables*/
+    GLuint vs = controller.load_shader("src/shaders/chunks_vertex.glsl", 0);
+    GLuint fs = controller.load_shader("src/shaders/chunks_fragment.glsl", 1);
 
-    auto compile = [&](GLenum type, const char* src){
-        GLuint s = glCreateShader(type);
-        glShaderSource(s,1,&src,nullptr);
-        glCompileShader(s);
-        GLint ok;
-        glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
-        if(!ok){
-            char buf[512]; glGetShaderInfoLog(s,512,nullptr,buf);
-            std::cerr<<"Shader compile error: "<<buf<<"\n";
-        }
-        return s;
-    };
+    /*Define shader program*/
+    program = controller.create_shader_program(vs, fs);
 
-    GLuint vs = load_shader("src/shaders/perlin-chunks_vertex.glsl", GL_VERTEX_SHADER);
-    GLuint fs = load_shader("src/shaders/perlin-chunks_fragment.glsl", GL_FRAGMENT_SHADER);
-    GLuint program = glCreateProgram();
+    glDeleteShader(vs);
+    glDeleteShader(fs);
 
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
+    /*Define compute program*/
+    computeProgram = controller.get_compute_program("src/shaders/chunks_compute.glsl");
 
-    GLint linkOk;
-    glGetProgramiv(program, GL_LINK_STATUS, &linkOk);
-    if (!linkOk) {
-        char log[512];
-        glGetProgramInfoLog(program, 512, nullptr, log);
-        std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << log << std::endl;
-    }
+    glUseProgram(computeProgram);
+    glUniform1f(glGetUniformLocation(computeProgram, "voxelSize"), VOXEL_SIZE);
+    glUniform1i(glGetUniformLocation(computeProgram, "chunkSize"), CHUNK_SIZE);
 
     glm::mat4 projection = glm::perspective(
-        glm::radians(40.0f),
+        glm::radians(45.0f),
         float(WIDTH) / float(HEIGHT),
         0.1f,
         1000.0f
     );
 
     glm::mat4 view = glm::lookAt(
-        glm::vec3(-10.0f, -10.0f, 5.0f), // eye
+        glm::vec3(7.0f, 7.0f, 5.0f), // eye
         glm::vec3(0.0f, 0.0f, 0.0f), // target
         glm::vec3(0.0f, 0.0f, 1.0f)  // up
     );
@@ -221,25 +224,20 @@ int main(){
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projection[0][0]);
     GLint viewLoc = glGetUniformLocation(program, "view");
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
-    GLint voxelSizeLoc = glGetUniformLocation(program, "view");
-    glUniform1f(voxelSizeLoc, VOXEL_SIZE);
 
-
-    size_t size = 12;
-    size_t half = size / 2;
+    long size = 20;
+    long half = size / 2;
 
     std::vector<Chunk> chunks;
     chunks.reserve(size * size);
-    for (size_t i = 0; i < size; i++)
-        for(size_t j = 0; j < size; j++){
-            if(i == half + 2 && j == half + 2) continue;
-            if(i == half + 1 && j == half + 1) continue;
+    for (long i = 0; i < size; i++)
+        for(long j = 0; j < size; j++){
             chunks.emplace_back(Chunk(i - half, j - half));
         }
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
-    while(!glfwWindowShouldClose(window)){
+    while(!glfwWindowShouldClose(window.m_glfwWindow)){
         glfwPollEvents();
         
         glClearColor(128/255, 0.0f, 128/255, 1.0f);
@@ -247,11 +245,11 @@ int main(){
 
         std::for_each(chunks.begin(), chunks.end(), [&](Chunk &c){c.draw();});
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(window.m_glfwWindow);
     }
 
     glDeleteProgram(program);
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(window.m_glfwWindow);
     glfwTerminate();
     return 0;
 }

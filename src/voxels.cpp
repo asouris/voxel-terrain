@@ -23,8 +23,8 @@ int main()
     Window window = Window(controller);
 
     /*Load and create shader variables*/
-    unsigned int vertex_3d_shader = controller.load_shader("shaders/3d_vertex.glsl", 0);
-    unsigned int fragment_3d_shader = controller.load_shader("shaders/3d_fragment.glsl", 1);
+    unsigned int vertex_3d_shader = controller.load_shader("src/shaders/3d_vertex.glsl", 0);
+    unsigned int fragment_3d_shader = controller.load_shader("src/shaders/3d_fragment.glsl", 1);
 
     /*Define shader program*/
     unsigned int shader_program_3d = controller.create_shader_program(vertex_3d_shader, fragment_3d_shader);

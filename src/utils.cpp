@@ -245,7 +245,7 @@ Window::Window(Controller &c){
 
     WIDTH = c.WIDTH, HEIGHT = c.HEIGHT;
 
-    init_glfw_window(WIDTH, HEIGHT, "Voxel Terrain");
+    init_glfw_window(WIDTH, HEIGHT, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
     controller = &c;
     glfwSetWindowUserPointer(m_glfwWindow, this);
