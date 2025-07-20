@@ -222,19 +222,24 @@ std::vector<float> Controller::getActiveVoxels(std::vector<int> &voxel_grid, std
 
 
 
-
 void Camera::update(){
-    if (keys[0]) phi-=1;
-    if (keys[1]) phi+=1;
-    if (keys[2]) theta-=1;
-    if (keys[3]) theta+=1;
+    float moveSpeed = 0.1;
+    float rotateSpeed = 2.5;
 
-    if (theta > 90) theta = 90;
-    else if(theta < 0) theta = 0.0001;
+    if (keys[0]) offset.x -= moveSpeed;
+    if (keys[1]) offset.x += moveSpeed;
+    if (keys[2]) offset.z += moveSpeed;
+    if (keys[3]) offset.z -= moveSpeed;
+    if (keys[4]) phi      -= rotateSpeed;
+    if (keys[5]) phi      += rotateSpeed;
 
     position.x = distance * sin(glm::radians(theta)) * sin(glm::radians(phi));
     position.y = distance * cos(glm::radians(theta));
     position.z = distance * sin(glm::radians(theta)) * cos(glm::radians(phi));
+
+    focus      = offset;
+    position   = position + offset;
+
 }
 
 glm::mat4 Camera::get_camera_view(){
@@ -245,7 +250,7 @@ Window::Window(Controller &c){
 
     WIDTH = c.WIDTH, HEIGHT = c.HEIGHT;
 
-    init_glfw_window(WIDTH, HEIGHT, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    init_glfw_window(WIDTH, HEIGHT, "a");
 
     controller = &c;
     glfwSetWindowUserPointer(m_glfwWindow, this);
@@ -327,9 +332,24 @@ void Window::internal_key_callback(int key, int action){
         if(action == GLFW_PRESS) controller->camera.keys[3] = 1;
         else if(action == GLFW_RELEASE) controller->camera.keys[3] = 0;
     }
+    if (key == GLFW_KEY_Q){
+        if(action == GLFW_PRESS) controller->camera.keys[4] = 1;
+        else if(action == GLFW_RELEASE) controller->camera.keys[4] = 0;
+    }
+    if (key == GLFW_KEY_E){
+        if(action == GLFW_PRESS) controller->camera.keys[5] = 1;
+        else if(action == GLFW_RELEASE) controller->camera.keys[5] = 0;
+    }
+    if (key == GLFW_KEY_UP and action == GLFW_PRESS){
+        controller->camera.render = std::min(controller->camera.render + 1, 8);
+        std::cout << controller->camera.render << std::endl;
+    }
+    if (key == GLFW_KEY_DOWN and action == GLFW_PRESS){
+        controller->camera.render = std::max(controller->camera.render - 1, 0);
+        std::cout << controller->camera.render << std::endl;
+    }
 }
 
 void Window::internal_scroll_callback(double xoffset, double yoffset){
-
-    controller->camera.distance += yoffset;
+    controller->camera.distance += yoffset * 5;
 }

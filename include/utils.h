@@ -27,11 +27,14 @@ struct Camera {
 
     glm::vec3 position = glm::vec3(3.0f, 0.0f, 0.0f);   /* position of camera*/
     glm::vec3 focus =    glm::vec3(0.0f, 0.0f, 0.0f);   /* target of camera*/
-    double distance = 3;                                /* distance from target*/
-    double theta = 90;                                  /* vertical angle*/
-    double phi = 0;                                     /* horizontal angle*/
+    double distance = 10;                                /* distance from target*/
+    double theta = 45;                                  /* vertical angle*/
+    double phi = 45;                                     /* horizontal angle*/
 
-    int keys[4] = {0, 0, 0, 0};                         /* hold active keys*/
+    glm::vec3 offset;
+    int render;
+
+    int keys[6] = {0, 0, 0, 0, 0, 0};                         /* hold active keys*/
 
     /** Updates angles of view according to pressed keys, 
      * also position of camera according to angles*/
@@ -39,6 +42,7 @@ struct Camera {
 
     /** Gets the view matrix from position and focus vectors*/
     glm::mat4 get_camera_view();
+
 
 };
 

@@ -4,7 +4,7 @@ in vec3 fragNormal;
 
 out vec4 outColor;
 
-vec3 lightDirection = vec3(0.0, 0.0, -1.0);
+vec3 lightDirection = vec3(0.0, -1.0, 0.0);
 vec3 lightColor     = vec3(0.8, 0.4, 0.4);
 float lightStrength = 0.5;
 
