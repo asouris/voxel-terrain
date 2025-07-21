@@ -26,14 +26,14 @@ int main()
     controller.camera.focus.y = 1;
 
     /*Load and create shader variables*/
-    unsigned int vertex_3d_shader = controller.load_shader("shaders/marching_vertex.glsl", 0);
-    unsigned int fragment_3d_shader = controller.load_shader("shaders/3d_fragment.glsl", 1);
+    unsigned int vertex_3d_shader = controller.load_shader("src/shaders/marching_vertex.glsl", 0);
+    unsigned int fragment_3d_shader = controller.load_shader("src/shaders/3d_fragment.glsl", 1);
 
     /*Define shader program*/
     unsigned int shader_program_3d = controller.create_shader_program(vertex_3d_shader, fragment_3d_shader);
 
     /*Define compute program*/
-    unsigned int compute = controller.get_compute_program("shaders/perlin.glsl");
+    unsigned int compute = controller.get_compute_program("src/shaders/perlin.glsl");
 
     /*Delete shaders once they are in a program*/
     glDeleteShader(vertex_3d_shader);

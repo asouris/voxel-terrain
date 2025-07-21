@@ -27,11 +27,11 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     /*Load and create shader variables*/
-    unsigned int vertex_3d_shader = controller.load_shader("shaders/marching_shadows_vertex.glsl", 0);
-    unsigned int fragment_3d_shader = controller.load_shader("shaders/marching_shadows_fragment.glsl", 1);
+    unsigned int vertex_3d_shader = controller.load_shader("src/shaders/marching_shadows_vertex.glsl", 0);
+    unsigned int fragment_3d_shader = controller.load_shader("src/shaders/marching_shadows_fragment.glsl", 1);
 
-    unsigned int vertex_depth = controller.load_shader("shaders/depth_vertex.glsl", 0);
-    unsigned int fragment_depth = controller.load_shader("shaders/depth_fragment.glsl", 1);
+    unsigned int vertex_depth = controller.load_shader("src/shaders/depth_vertex.glsl", 0);
+    unsigned int fragment_depth = controller.load_shader("src/shaders/depth_fragment.glsl", 1);
 
     /*Define shader program*/
     unsigned int shader_program_3d = controller.create_shader_program(vertex_3d_shader, fragment_3d_shader);
@@ -40,7 +40,7 @@ int main()
     unsigned int depth_program = controller.create_shader_program(vertex_depth, fragment_depth);
 
     /*Define compute program*/
-    unsigned int compute = controller.get_compute_program("shaders/perlin_3d.glsl");
+    unsigned int compute = controller.get_compute_program("src/shaders/perlin_3d.glsl");
 
     /*Delete shaders once they are in a program*/
     glDeleteShader(vertex_3d_shader);

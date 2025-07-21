@@ -30,7 +30,7 @@ int main()
     unsigned int shader_program_3d = controller.create_shader_program(vertex_3d_shader, fragment_3d_shader);
 
     /*Define compute program*/
-    unsigned int compute = controller.get_compute_program("shaders/perlin.glsl");
+    unsigned int compute = controller.get_compute_program("src/shaders/perlin.glsl");
 
     /*Delete shaders once they are in a program*/
     glDeleteShader(vertex_3d_shader);

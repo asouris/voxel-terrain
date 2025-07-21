@@ -72,9 +72,9 @@ float scale = 1.75;
 float heightOffset = 0.;
 
 void main(){
-    float h       = fractalPerlin(aOffset);
+    float h       = fractalPerlin(aOffset + vec2(100000, 100000));
 
-    vec4 worldPos = vec4(aPos + vec3(aOffset, h * scale + heightOffset), 1.0);
+    vec4 worldPos = vec4(aPos + vec3(aOffset.x, h * scale + heightOffset, aOffset.y), 1.0);
     gl_Position   = projection * view * worldPos;
 
     fragNormal    = aNormal;
