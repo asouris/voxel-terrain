@@ -2,9 +2,9 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 layout(std430, binding = 0) buffer Offsets {
-    float data[];
+    int draw[];
 };
-layout(binding=2, offset=0) uniform atomic_uint counter;
+layout(binding=1) uniform atomic_uint counter;
 
 uniform int globalX, globalZ;
 uniform float voxelSize;
@@ -73,31 +73,35 @@ float scale = 1.7;
 float heightOffset = chunkSize * voxelSize / 2;
 
 void main() {
+    
     int x           = int(gl_GlobalInvocationID.x);
     int y           = int(gl_GlobalInvocationID.y);
     int z           = int(gl_GlobalInvocationID.z);
-
+    uint idx        = x + y * chunkSize + z * chunkSize * chunkSize * 2;
 
     vec2 chunkPos   = vec2(
                         (globalX * chunkSize + (chunkSize / 2)) * voxelSize,
                         (globalZ * chunkSize + (chunkSize / 2)) * voxelSize
                     );
-    if (distance(cameraPos, chunkPos) > chunkSize * voxelSize * renderDistance) return;
+    /* chunk out of render distance */
+    if (distance(cameraPos, chunkPos) > chunkSize * voxelSize * renderDistance){
+        draw[idx]   = 0;
+        return;
+    }
 
     vec2 worldPos   = vec2(
                         (globalX * chunkSize + x)  * voxelSize,
                         (globalZ * chunkSize + z)  * voxelSize
                     );
-
-    worldPos       += vec2(1000000, 1000000);
+    worldPos        = worldPos + vec2(1000000, 1000000);
 
     float h         = fractalPerlin(worldPos * 0.1) * scale + heightOffset;
-    if (float(y) * voxelSize > h) return;
-    
-    uint idx        = atomicCounterIncrement(counter);
+    /* block above the perlin noise surface */
+    if (float(y) * voxelSize > h) {
+        draw[idx]   = 0;
+        return;
+    }
 
-    idx             = idx * 3;
-    data[idx]       = (globalX * chunkSize  + x) * voxelSize;
-    data[idx + 1]   = float(y) * voxelSize;
-    data[idx + 2]   = (globalZ * chunkSize  + z) * voxelSize;
+    draw[idx]       = 1;
+    atomicCounterIncrement(counter);
 }

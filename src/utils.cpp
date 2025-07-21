@@ -351,7 +351,7 @@ void Window::internal_key_callback(int key, int action){
 }
 
 void Window::internal_scroll_callback(double xoffset, double yoffset){
-    controller->camera.distance += yoffset * 5;
+    controller->camera.distance += yoffset;
 }
 
 std::vector<float> getCubeVertices (float cell_size){

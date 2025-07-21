@@ -19,7 +19,8 @@ int   CHUNK_SIZE;
 float VOXEL_SIZE;
 
 GLuint program;
-GLuint computeProgram;
+GLuint chunksProgram;
+GLuint cullingProgram;
 
 class Chunk{
     public:
@@ -94,12 +95,7 @@ class Chunk{
 
         glGenBuffers(1, &offsetSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, offsetSSBO);
-        glBufferData(
-            GL_SHADER_STORAGE_BUFFER,
-            chunkBlocks * 3 * sizeof(float),
-            nullptr,
-            GL_DYNAMIC_DRAW
-        );
+        glBufferData(GL_SHADER_STORAGE_BUFFER, chunkBlocks * 3 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, offsetSSBO);
 
         glBindBuffer(GL_ARRAY_BUFFER, offsetSSBO);
@@ -107,41 +103,62 @@ class Chunk{
         glVertexAttribDivisor(1, 1);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
-        glGenBuffers(1, &counterBuf);
-        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuf);
+        glGenBuffers(1, &offsetCounterBuff);
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, offsetCounterBuff);
+        glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
+
+        glGenBuffers(1, &drawCounterBuff);
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, drawCounterBuff);
         glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
         
-        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, counterBuf);
+        glGenBuffers(1, &drawSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, chunkBlocks * sizeof(int), nullptr, GL_DYNAMIC_DRAW);
+
     }
 
     void draw(){
         globalX = initialGlobalX + cameraChunk[0];
         globalZ = initialGlobalZ + cameraChunk[1];
 
-        glUseProgram(computeProgram);
-        glUniform1i(glGetUniformLocation(computeProgram, "globalX"), globalX);
-        glUniform1i(glGetUniformLocation(computeProgram, "globalZ"), globalZ);
-        
-        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, counterBuf);
-        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuf);
+        glUseProgram(chunksProgram);
+        glUniform1i(glGetUniformLocation(chunksProgram, "globalX"), globalX);
+        glUniform1i(glGetUniformLocation(chunksProgram, "globalZ"), globalZ);
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, drawSSBO);
+
+        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 1, drawCounterBuff);
         glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, drawCounterBuff);
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, offsetSSBO);
-        glDispatchCompute(CHUNK_SIZE/8, CHUNK_SIZE/8, CHUNK_SIZE/8);
+        glDispatchCompute(CHUNK_SIZE/8, CHUNK_SIZE*2/8, CHUNK_SIZE/8);
+        glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
 
-        glMemoryBarrier(
-            GL_ATOMIC_COUNTER_BARRIER_BIT    |
-            GL_SHADER_STORAGE_BARRIER_BIT    |
-            GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT
-        );
-
-        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuf);
-        GLuint *cnt = (GLuint*)glMapBufferRange(
-                        GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
-                        GL_MAP_READ_BIT);
-        GLuint instanceCount = *cnt;
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, drawCounterBuff);
+        GLuint *cnt = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), GL_MAP_READ_BIT);
         glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
 
+        // std::cout << "draws" <<*cnt << std::endl;
+        if (*cnt == 0) return;
+
+        glUseProgram(cullingProgram);
+        glUniform1i(glGetUniformLocation(cullingProgram, "globalX"), globalX);
+        glUniform1i(glGetUniformLocation(cullingProgram, "globalZ"), globalZ);
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, offsetSSBO);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, drawSSBO);
+        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, offsetCounterBuff);
+        glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, offsetCounterBuff);
+
+        glDispatchCompute(CHUNK_SIZE/8, CHUNK_SIZE*2/8, CHUNK_SIZE/8);
+        glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, offsetCounterBuff);
+        cnt = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), GL_MAP_READ_BIT);
+        glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+        
+        // std::cout << "instances" <<*cnt << std::endl;
         if (*cnt == 0) return;
 
         glUseProgram(program);
@@ -159,9 +176,9 @@ class Chunk{
     private:
 
     float chunkSize;
-    GLuint cubeVAO, cubeVBO, offsetSSBO, counterBuf, zero = 0; 
+    GLuint cubeVAO, cubeVBO, offsetSSBO, drawSSBO, offsetCounterBuff, drawCounterBuff, zero = 0; 
     long initialGlobalX, initialGlobalZ, globalX, globalZ;
-    uint chunkBlocks = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+    uint chunkBlocks = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 2;
     long cameraChunk[2] = {0, 0};
 
 };
@@ -194,12 +211,17 @@ int main(int argc, char* argv[]){
     glDeleteShader(vs);
     glDeleteShader(fs);
 
-    /*Define compute program*/
-    computeProgram = controller.get_compute_program("src/shaders/chunks_compute.glsl");
+    chunksProgram = controller.get_compute_program("src/shaders/chunks_compute.glsl");
 
-    glUseProgram(computeProgram);
-    glUniform1f(glGetUniformLocation(computeProgram, "voxelSize"), VOXEL_SIZE);
-    glUniform1i(glGetUniformLocation(computeProgram, "chunkSize"), CHUNK_SIZE);
+
+    glUseProgram(chunksProgram);
+    glUniform1f(glGetUniformLocation(chunksProgram, "voxelSize"), VOXEL_SIZE);
+    glUniform1i(glGetUniformLocation(chunksProgram, "chunkSize"), CHUNK_SIZE);
+
+    cullingProgram = controller.get_compute_program("src/shaders/culling_compute.glsl");
+    glUseProgram(cullingProgram);
+    glUniform1f(glGetUniformLocation(cullingProgram, "voxelSize"), VOXEL_SIZE);
+    glUniform1i(glGetUniformLocation(cullingProgram, "chunkSize"), CHUNK_SIZE);
 
     glm::mat4 projection = glm::perspective(
         glm::radians(45.0f),
@@ -236,10 +258,10 @@ int main(int argc, char* argv[]){
         glUseProgram(program);
         glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, &controller.camera.get_camera_view()[0][0]);
 
-        glUseProgram(computeProgram);
-        glUniform1i(glGetUniformLocation(computeProgram, "renderDistance"), controller.camera.render);
+        glUseProgram(chunksProgram);
+        glUniform1i(glGetUniformLocation(chunksProgram, "renderDistance"), controller.camera.render);
         float cameraPos[2] = {controller.camera.offset.x, controller.camera.offset.z};
-        glUniform2fv(glGetUniformLocation(computeProgram, "cameraPos"), 1, cameraPos);
+        glUniform2fv(glGetUniformLocation(chunksProgram, "cameraPos"), 1, cameraPos);
 
         std::for_each(chunks.begin(), chunks.end(), 
             [&](Chunk &c)
@@ -251,6 +273,9 @@ int main(int argc, char* argv[]){
 
                 c.draw();
             });
+        
+        // exit(2);
+
 
         glfwSwapBuffers(window.m_glfwWindow);
     }
