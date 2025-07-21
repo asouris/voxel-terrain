@@ -341,7 +341,7 @@ void Window::internal_key_callback(int key, int action){
         else if(action == GLFW_RELEASE) controller->camera.keys[5] = 0;
     }
     if (key == GLFW_KEY_UP and action == GLFW_PRESS){
-        controller->camera.render = std::min(controller->camera.render + 1, 8);
+        controller->camera.render = std::min(controller->camera.render + 1, 10);
         std::cout << controller->camera.render << std::endl;
     }
     if (key == GLFW_KEY_DOWN and action == GLFW_PRESS){

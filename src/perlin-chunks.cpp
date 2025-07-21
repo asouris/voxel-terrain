@@ -234,7 +234,7 @@ int main(int argc, char* argv[]){
     GLint projLoc = glGetUniformLocation(program, "projection");
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projection[0][0]);
 
-    long size = 16;
+    long size = 20;
     long half = size / 2;
 
     std::vector<Chunk> chunks;
