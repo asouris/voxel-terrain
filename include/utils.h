@@ -18,16 +18,24 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
+
+int worldIdx(int i, int j, int k, const int N, const int M, const int D);
+std::vector<float> getCubeVertices (float cell_size);
+
+
 /** Represents a Camera, manges view matrix logic */
 struct Camera {
 
     glm::vec3 position = glm::vec3(3.0f, 0.0f, 0.0f);   /* position of camera*/
     glm::vec3 focus =    glm::vec3(0.0f, 0.0f, 0.0f);   /* target of camera*/
-    double distance = 3;                                /* distance from target*/
-    double theta = 90;                                  /* vertical angle*/
-    double phi = 0;                                     /* horizontal angle*/
+    double distance = 10;                                /* distance from target*/
+    double theta = 45;                                  /* vertical angle*/
+    double phi = 45;                                     /* horizontal angle*/
 
-    int keys[4] = {0, 0, 0, 0};                         /* hold active keys*/
+    glm::vec3 offset;
+    int render;
+
+    int keys[6] = {0, 0, 0, 0, 0, 0};                         /* hold active keys*/
 
     /** Updates angles of view according to pressed keys, 
      * also position of camera according to angles*/
@@ -36,6 +44,7 @@ struct Camera {
     /** Gets the view matrix from position and focus vectors*/
     glm::mat4 get_camera_view();
 
+
 };
 
 /* Holds all variables that control the simulations, also any function that updates those variables*/
@@ -43,7 +52,7 @@ struct Controller{
     /* simulation constants */
     int WIDTH, HEIGHT;
     int rows, cols, planes;
-    float SIM_SCALE = 0.8;          /* Scale of the simulation in comparison to window size*/
+    float SIM_SCALE = 3;          /* Scale of the simulation in comparison to window size*/
     float CELL_SIZE = 10.0;         /* Size of cell of pixels */
     float cell_gl_size;             /* Size of cell for OpenGL*/
 
@@ -68,6 +77,9 @@ struct Controller{
      * @return shader identifier
     */
     unsigned int load_shader(std::string path, bool shader_type);
+
+    unsigned int get_compute_program(std::string path);
+
     /** Creates shader program from shaders, if said so, it deletes the used shaders afterwards.
      * @param vertex vertex shader already loaded
      * @param fragment fragment shader already loaded

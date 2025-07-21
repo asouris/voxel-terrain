@@ -21,12 +21,6 @@ FetchContent_MakeAvailable(glm)
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS})
 
-#copy shaders to bin
-file(COPY src/shaders/3d_fragment.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
-file(COPY src/shaders/3d_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
-file(COPY src/shaders/grid_fragment.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
-file(COPY src/shaders/grid_vertex.glsl DESTINATION ${PROJECT_SOURCE_DIR}/bin/shaders/)
-
 FetchContent_Declare(imgui_external
 	URL https://github.com/ocornut/imgui/archive/refs/tags/v1.92.0.tar.gz
 	EXCLUDE_FROM_ALL
@@ -67,3 +61,25 @@ add_executable(voxels src/voxels.cpp)
 target_include_directories(voxels PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(voxels ${OPENGL_LIBRARIES} utils)
 
+
+add_executable(perlin src/perlin.cpp)
+target_include_directories(perlin PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(perlin ${OPENGL_LIBRARIES} utils)
+
+
+add_executable(perlin-chunks src/perlin-chunks.cpp)
+target_include_directories(perlin-chunks PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(perlin-chunks ${OPENGL_LIBRARIES} utils)
+
+# This one generates an render of the compute shader perlin.glsl for debugging
+add_executable(testCompute src/testCompute.cpp)
+target_include_directories(testCompute PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(testCompute ${OPENGL_LIBRARIES} utils)
+
+add_executable(marching src/marchingCubes.cpp)
+target_include_directories(marching PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(marching ${OPENGL_LIBRARIES} utils)
+
+add_executable(marching3d src/marchingCubes3DNoise.cpp)
+target_include_directories(marching3d PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(marching3d ${OPENGL_LIBRARIES} utils)
