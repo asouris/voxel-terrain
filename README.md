@@ -1,27 +1,38 @@
 # Voxel Terrain
-Este es un proyecto para el ramo Computación en GPU.
-
+Exploration of terrain generation techniques based on voxels.
+![](img/chunks.gif)
 ## Build
-En repositorio viene con un archivo `makefile` que permite facilitar la compilación. Basta con ejecutar
+Run `make` on root to build.
 ```
 > make
 ```
-y se creará la carpeta `bin` que aloja todos lo binarios del proyecto. 
+The folder `bin` holds all executables.
 
-## Ejecutar
-Para ejecutar el modelo básico de Voxels:
+## Run
+To run a basic voxel terrain defined by Perlin noise use:
 ```
 > ./bin/voxels
 ```
-Para ejecutar Marching cubes:
+To run the same terrain but with a smoother surface using marching cubes:
 ```
 > ./bin/marching
 ```
-Para ejecutar Marching cubes con ruido 3D:
+To generate a terrain defined by a 3D Perlin noise, also smoothed by marching cubes:
 ```
 > ./bin/marching3d
 ```
-Y finalmente para ejecutar el modelo con Chunks:
+To run a terrain generation optimized by chunks:
 ```
 > ./bin/perlin-chunks
 ```
+
+## Screeshots
+
+| <img src="img/voxels.png" alt="voxels" width="300"/>  | <img src="img/marching.png" alt="marching" width="300"/>
+|:---:|:---:|
+| Basic voxel based terrain with Perlin Noise  | Terrain smoothed by marching cubes
+
+
+| <img src="img/marching3d.png" alt="voxels" width="300"/>  |
+|:---:|
+| Terrain generated from a 3D Perlin Noise  | 
